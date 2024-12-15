@@ -5,14 +5,15 @@ const port = process.env.PORT || 3000;
 
 // Configuración de CORS
 const allowedOrigins = [
-  'http://localhost:4200', // Frontend local (desarrollo)
-  'https://proyecto-taller-sis-info-grupo-1.onrender.com' // Frontend en producción
+  'http://localhost:4200', 
+  'https://proyecto-taller-sis-info-grupo-1.onrender.com',
+  'https://merkabo.netlify.app'
 ];
 
 app.use(cors({
   origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
-  credentials: true // Permitir cookies si se necesitan
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+  credentials: true 
 }));
 
 // Middleware
