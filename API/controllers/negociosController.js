@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const db = require('../db');  // Conexión a la base de datos
 
 // Crear un nuevo negocio 
