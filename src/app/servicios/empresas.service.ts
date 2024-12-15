@@ -6,7 +6,7 @@ import { Empresa } from '../interfaces/empresa';
 })
 export class EmpresasService {
 
-  private apiUrl = 'http://localhost:3000/empresas';
+  private apiUrl = 'https://proyecto-taller-sis-info-grupo-1.onrender.com/empresas';
 
   constructor() { }
 

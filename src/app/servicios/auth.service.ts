@@ -13,7 +13,7 @@ interface AuthResponse {
   providedIn: 'root'
 })
 export class AutenticacionService {
-  private apiUrl = 'http://localhost:3000';
+  private apiUrl = 'https://proyecto-taller-sis-info-grupo-1.onrender.com';
 
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.isAuthenticated());
   isAuthenticated$ = this.isAuthenticatedSubject.asObservable();

@@ -8,7 +8,7 @@ import { Pedido } from '../interfaces/pedido';
   providedIn: 'root'
 })
 export class PedidosService {
-  private apiUrl = 'http://localhost:3000/pedidos';  // URL de tu API
+  private apiUrl = 'https://proyecto-taller-sis-info-grupo-1.onrender.com/pedidos';  // URL de tu API
 
   constructor(private http: HttpClient) {}
 

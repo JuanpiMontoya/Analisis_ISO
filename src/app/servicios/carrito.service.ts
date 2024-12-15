@@ -12,7 +12,7 @@ export class CarritoService {
 
   private carritoItems: { [id_producto: number]: { producto: Producto, cantidad: number } } = {};
 
-  private apiUrl = 'http://localhost:3000';
+  private apiUrl = 'https://proyecto-taller-sis-info-grupo-1.onrender.com';
 
   constructor() {
     this.cargarCarritoDesdeStorage();
