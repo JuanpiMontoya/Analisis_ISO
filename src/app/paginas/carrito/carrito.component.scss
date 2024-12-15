@@ -54,11 +54,6 @@
   backdrop-filter: blur(10px);
 }
 
-.total-container:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
-}
-
 .total-container p {
   font-size: 1.8rem;
   font-weight: bold;
@@ -88,18 +83,10 @@
   transform: translateY(-2px);
 }
 
-.total-container a:active {
-  transform: translateY(1px);
-}
-
 .mat-mdc-outlined-button:not(:disabled) {
   color: white;
   font-family: "Poppins", sans-serif;
   border-color: white;
-}
-
-.mat-mdc-outlined-button:hover {
-  background-color: #CCAD8F;
 }
 
 .container-cart-product {
@@ -145,17 +132,6 @@
     border-radius: 10px;
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .container-quantity:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-  }
-
-
-  .superior {
-    margin-bottom: 10px;
-    color: #fff;
   }
 
   .inferior {
