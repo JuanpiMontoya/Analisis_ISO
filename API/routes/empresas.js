@@ -2,7 +2,25 @@ const express = require('express');
 const multer = require('multer');
 const { verificarToken } = require('../middleware/auth');  // Middleware para verificar token de autenticación
 
-const upload = multer(); // Configuración básica de multer
+// Configuración de Multer
+const storage = multer.memoryStorage(); 
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 3 * 1024 * 1024 // Limitar el tamaño del archivo a 3 MB
+    },
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|png|webp/; 
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(file.originalname.split('.').pop().toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Error: Tipo de archivo no permitido. Solo se permiten imágenes Jpg, Png, y Webp'));
+        }
+    }
+});
 
 // Controladores
 const { crearEmpresa, obtenerEmpresas, obtenerEmpresaPorId, eliminarEmpresa, actualizarEmpresa } = require('../controllers/empresasController');

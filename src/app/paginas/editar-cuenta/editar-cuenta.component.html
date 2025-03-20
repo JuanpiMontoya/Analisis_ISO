@@ -37,22 +37,31 @@
         </mat-form-field>
     </div>
 
-    <div class="form-2-fields">
-        <mat-form-field>
-            <mat-label>Nueva Contraseña</mat-label>
-            <input matInput [type]="hide ? 'password' : 'text'" formControlName="nuevaContraseña">
-            <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" [attr.aria-label]="'Hide password'" type="button">
+      <!-- div contraseña -->
+  <div class="form-2-fields" id="edicion">
+    <mat-form-field appearance="fill">
+        <mat-label>Ingresa tu Contraseña</mat-label>
+        <input matInput [type]="hide ? 'password' : 'text'" formControlName="nuevaContraseña" required name="contraseña">
+        <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" [attr.aria-label]="'Hide password'" type="button">
             <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
-            </button>        
-        </mat-form-field>
-
-        <mat-form-field>
-            <mat-label>Confirmar nueva contraseña</mat-label>
-            <input matInput [type]="hide ? 'password' : 'text'" formControlName="confirmarContraseña">
-            <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" [attr.aria-label]="'Hide password'" type="button">
+        </button>
+        <mat-error *ngIf="editarCuentaForm.get('nuevaContraseña')?.invalid && editarCuentaForm.get('nuevaContraseña')?.touched">
+          Ingresa tu contraseña
+        </mat-error>
+                  <mat-error *ngIf="editarCuentaForm.get('nuevaContraseña')?.hasError('passwordStrength') && editarCuentaForm.get('nuevaContraseña')?.touched">La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial.
+        </mat-error>
+    </mat-form-field>
+    
+    <mat-form-field appearance="fill">
+        <mat-label>Confirma tu Contraseña</mat-label>
+        <input matInput [type]="hide ? 'password' : 'text'" formControlName="confirmarContraseña" required name="confirmar contraseña">
+        <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" [attr.aria-label]="'Hide password'" type="button">
             <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
-            </button>        
-        </mat-form-field>
+        </button>
+        <mat-error *ngIf="editarCuentaForm.get('confirmarContraseña')?.invalid && editarCuentaForm.get('confirmarContraseña')?.touched">Ingresa la confirmación de tu contraseña</mat-error>
+        <mat-error *ngIf="editarCuentaForm.get('nuevaContraseña')?.value !== editarCuentaForm.get('confirmarContraseña')?.value && editarCuentaForm.get('confirmarContraseña')?.touched">
+          Las contraseñas no coinciden.
+        </mat-error>      </mat-form-field>
     </div>
 
     <mat-form-field>

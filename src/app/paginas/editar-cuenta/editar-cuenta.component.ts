@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule} from '@angular/common'; 
-import {FormBuilder,FormGroup, Validators, ReactiveFormsModule} from '@angular/forms';
-import { TextFieldModule } from '@angular/cdk/text-field'
+import { CommonModule } from '@angular/common'; 
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { TextFieldModule } from '@angular/cdk/text-field';
 //Angular Material
-import {MatIconModule} from '@angular/material/icon';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatSelectModule} from '@angular/material/select';
-import {MatInputModule} from '@angular/material/input';
-import {MatButtonModule} from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
 //empresas
 import { Empresa } from '../../interfaces/empresa';
 import { EmpresasService } from '../../servicios/empresas.service';
@@ -16,86 +16,94 @@ import { Negocio } from '../../interfaces/negocio';
 import { NegociosService } from '../../servicios/negocios.service';
 //Google maps
 import { GoogleMapsModule } from '@angular/google-maps';
+import { passwordValidator } from '../../servicios/validar-contraseña.service'; // Asegúrate de importar tu validador
 
 @Component({
   selector: 'app-editar-cuenta',
   standalone: true,
-  imports: [MatFormFieldModule, MatInputModule,MatIconModule,
+  imports: [MatFormFieldModule, MatInputModule, MatIconModule,
     MatSelectModule, CommonModule, MatButtonModule,
     ReactiveFormsModule,
-    GoogleMapsModule,TextFieldModule],
+    GoogleMapsModule, TextFieldModule],
   templateUrl: './editar-cuenta.component.html',
-  styleUrl: './editar-cuenta.component.scss'
+  styleUrls: ['./editar-cuenta.component.scss']
 })
 
 export class EditarCuentaComponent implements OnInit {
-    editarCuentaForm: FormGroup;
-    userType: string | null;
-    userId: number;    
-    hide = true;
-    selectedImage: File | null = null;
-    selectedImageQR: File | null = null;
-    imageUrl: string = '';
-    imageQR: string = ''
+  editarCuentaForm: FormGroup;
+  userType: string | null;
+  userId: number;    
+  hide = true;
+  selectedImage: File | null = null;
+  selectedImageQR: File | null = null;
+  imageUrl: string = '';
+  imageQR: string = '';
 
-    selectedCoordinates: google.maps.LatLngLiteral = { lat: 0, lng: 0 }; 
-    center: google.maps.LatLngLiteral = { lat: 0, lng: 0 }; 
-    zoom = 18; 
+  selectedCoordinates: google.maps.LatLngLiteral = { lat: 0, lng: 0 }; 
+  center: google.maps.LatLngLiteral = { lat: 0, lng: 0 }; 
+  zoom = 18; 
 
-    previousPassword: string | null = null;
+  previousPassword: string | null = null;
 
-    constructor(
-      private fb: FormBuilder, 
-      private empresasService: EmpresasService, 
-      private negociosService: NegociosService,
-    ) {
-      this.userType = localStorage.getItem('userType');
-      this.userId = Number(localStorage.getItem('userId')) || 0; 
-      this.editarCuentaForm = this.fb.group({
-        nombre: ['', Validators.required],
-        correo: ['', [Validators.required, Validators.email]],
-        nuevaContraseña: [''], 
-        confirmarContraseña: [''],
-        contacto: [''],
-        logo: [''], 
-        descripcion: [''], 
-        qr_pago: ['']
-      });
+  constructor(
+    private fb: FormBuilder, 
+    private empresasService: EmpresasService, 
+    private negociosService: NegociosService,
+  ) {
+    this.userType = localStorage.getItem('userType');
+    this.userId = Number(localStorage.getItem('userId')) || 0; 
+    this.editarCuentaForm = this.fb.group({
+      nombre: ['', Validators.required],
+      correo: ['', [Validators.required, Validators.email]],
+      nuevaContraseña: ['', [passwordValidator()]], // Agregar validador de contraseña
+      confirmarContraseña: ['', Validators.required],
+      contacto: [''],
+      logo: [''], 
+      descripcion: [''], 
+      qr_pago: ['']
+    }, { validators: this.passwordMatchValidator }); // Agregar validador de coincidencia de contraseñas
+  }
+
+  ngOnInit(): void {
+    if (this.userId !== null) {
+      this.cargarDatosUsuario();
+    } else {
+      console.error('Error: userId es null');
     }
+  }
 
-    ngOnInit(): void {
-      if (this.userId !== null) {
-        this.cargarDatosUsuario();
-      } else {
-        console.error('Error: userId es null');
-      }
-    }
+  // Validador para verificar que las contraseñas coincidan
+  passwordMatchValidator(form: FormGroup) {
+    return form.get('nuevaContraseña')?.value === form.get('confirmarContraseña')?.value
+      ? null : { mismatch: true };
+  }
 
-    onImageSelected(event: any): void {
-      const file: File = event.target.files[0];
-      if (file) {
-        this.selectedImage = file;
-    
-        const reader = new FileReader();
-        reader.onload = () => {
-          this.imageUrl = reader.result as string;
-        };
-        reader.readAsDataURL(file);
-      }
-    }
 
-    onImageSelectedQR(event: any): void {
-      const fileQR: File = event.target.files[0];
-      if (fileQR) {
-        this.selectedImageQR = fileQR;
-    
-        const reader = new FileReader();
-        reader.onload = () => {
-          this.imageQR = reader.result as string;
-        };
-        reader.readAsDataURL(fileQR);
-      }
+  onImageSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (file) {
+      this.selectedImage = file;
+  
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.imageUrl = reader.result as string;
+      };
+      reader.readAsDataURL(file);
     }
+  }
+
+  onImageSelectedQR(event: any): void {
+    const fileQR: File = event.target.files[0];
+    if (fileQR) {
+      this.selectedImageQR = fileQR;
+  
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.imageQR = reader.result as string;
+      };
+      reader.readAsDataURL(fileQR);
+    }
+  }
 
     seleccionarPunto(event: google.maps.MapMouseEvent) {
       if (event.latLng) {

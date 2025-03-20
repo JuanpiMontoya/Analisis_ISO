@@ -40,27 +40,29 @@
     </div>
     <!-- div contraseña-->
     <div class="form-2-fields">
-
-        <mat-form-field appearance="fill">
-            <mat-label>Ingresa tu Contraseña</mat-label>
-            <input matInput [type]="hide ? 'password' : 'text'" [formControl]="password" required name="contraseña">
-            <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" [attr.aria-label]="'Hide password'" type="button">
-              <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
-            </button>
-            <mat-error *ngIf="password.invalid && password.touched">Ingresa tu contraseña</mat-error>
+    <mat-form-field appearance="fill">
+        <mat-label>Ingresa tu Contraseña</mat-label>
+        <input matInput [type]="hide ? 'password' : 'text'" [formControl]="password" required name="contraseña">
+        <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" [attr.aria-label]="'Hide password'" type="button">
+            <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="password.invalid && password.touched">Ingresa tu contraseña</mat-error>
+        <mat-error *ngIf="password.hasError('passwordStrength') && password.touched">La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial.
+        </mat-error>
         </mat-form-field>
-
+        
         <mat-form-field appearance="fill">
-            <mat-label>Confirma tu Contraseña</mat-label>
-            <input matInput [type]="hide ? 'password' : 'text'" [formControl]="password_confirm" required name="confirmar contraseña">
-            <button mat-icon-button matSuffix (click)="togglePasswordConfirmVisibility()" [attr.aria-label]="'Hide password'" type="button">
-              <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
-            </button>
-            <mat-error *ngIf="password_confirm.invalid && password_confirm.touched">Ingresa la confirmación de tu contraseña</mat-error>
+        <mat-label>Confirma tu Contraseña</mat-label>
+        <input matInput [type]="hide ? 'password' : 'text'" [formControl]="password_confirm" required name="confirmar contraseña">
+        <button mat-icon-button matSuffix (click)="togglePasswordConfirmVisibility()" [attr.aria-label]="'Hide password'" type="button">
+            <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="password_confirm.invalid && password_confirm.touched">Ingresa la confirmación de tu contraseña</mat-error>
+        <mat-error *ngIf="password_confirm.value !== password.value && password_confirm.touched">Las contraseñas no coinciden.</mat-error>
         </mat-form-field>
     </div>
     <!-- div descripcion y contacto-->
-    <div class="form-2-fields">
+    <div class="form-2-fields" id="descripcion">
         <mat-form-field>
             <mat-label>Ingresa una descripción o información</mat-label>
             <textarea matInput

@@ -15,6 +15,8 @@
   //Google maps
   import { GoogleMapsModule } from '@angular/google-maps';
 
+  import { passwordValidator } from '../../servicios/validar-contraseña.service';
+
   @Component({
     selector: 'app-registrarse',
     standalone: true,
@@ -34,7 +36,7 @@
 
     readonly email = new FormControl('', [Validators.required, Validators.email]);
     readonly nombre = new FormControl('', [Validators.required]);
-    readonly password = new FormControl('', [Validators.required]);
+    readonly password = new FormControl('', [Validators.required, passwordValidator()]);
     readonly password_confirm = new FormControl('', [Validators.required]);
     readonly informacion = new FormControl('', [Validators.required]);
     readonly contacto = new FormControl('', [
@@ -61,8 +63,8 @@
           alert('Por favor, selecciona un archivo de imagen válido (png, jpg, webp).');
           return;
         }
-        if (file.size > 5 * 1024 * 1024) { 
-          alert('El archivo seleccionado es demasiado grande. Máximo 5MB.');
+        if (file.size > 3 * 1024 * 1024) { 
+          alert('El archivo seleccionado es demasiado grande. Máximo 3MB.');
           return;
         }
     
