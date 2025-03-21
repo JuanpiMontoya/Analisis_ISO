@@ -24,6 +24,7 @@
     "angularx-qrcode": "^18.0.2",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.7",
+    "express-validator": "^7.2.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
     "multer": "^1.4.5-lts.1",
