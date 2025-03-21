@@ -1,111 +1,149 @@
-const db = require('../db');
-const { body, validationResult } = require('express-validator');
+const bcrypt = require('bcryptjs');
+const db = require('../db');  // Conexión a la base de datos
 
-// Middleware para validar entradas
-const validateInputs = [
-    body('id_usuario').isInt().withMessage('El ID de usuario debe ser un número entero.'),
-    body('id_producto').isInt().withMessage('El ID de producto debe ser un número entero.'),
-    body('cantidad').isInt({ gt: 0 }).withMessage('La cantidad debe ser un número entero mayor que 0.').optional(),
-];
+// Crear una nueva empresa 
+exports.crearEmpresa = async (req, res) => {
+    const { nombre, descripcion, correo, contrasenia, latitud, longitud, contacto } = req.body;
+    const logo = req.files['logo'] ? req.files['logo'][0].buffer : null;
+    const QR_pago = req.files['QR_pago'] ? req.files['QR_pago'][0].buffer : null;
 
-// Agregar un producto al carrito
-exports.addToCart = async (req, res) => {
-    const { id_usuario, id_producto, cantidad } = req.body;
-
-    // Validar entradas
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+    const saltRounds = 10;
 
     try {
-        await db.query(
-            'INSERT INTO carritos (id_negocio, id_producto, cantidad, estado) VALUES (?, ?, ?, ?)',
-            [id_usuario, id_producto, cantidad, 'activo']
-        );
-        res.status(201).send({ message: 'Producto añadido al carrito.' });
-    } catch (error) {
-        console.error(error); // Log del error para el desarrollador
-        res.status(500).send({ message: 'Error al añadir el producto al carrito.' });
+        // Hasheamos la contraseña
+        const hashedPassword = await bcrypt.hash(contrasenia, saltRounds);
+
+        const query = 'INSERT INTO empresas (nombre, correo, contrasenia, descripcion, latitud, longitud, contacto, logo, QR_pago) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+        const [result] = await db.query(query, [nombre, correo, hashedPassword, descripcion, latitud, longitud, contacto, logo, QR_pago]);
+
+        // Respuesta exitosa
+        res.status(201).json({ mensaje: 'Empresa creada con éxito' });
+    } catch (err) {
+        console.error('Error al crear la empresa:', err);
+        return res.status(500).json({ error: err.message });
+    }
+}
+
+// Obtener todas las empresas
+exports.obtenerEmpresas = async (req, res) => {
+    const query = 'SELECT * FROM empresas';
+
+    try {
+        const [results] = await db.query(query);
+
+        const empresas = results.map(empresa => {
+            if (empresa.logo) {
+                empresa.logo = `data:image/png;base64,${empresa.logo.toString('base64')}`;
+            }
+            if (empresa.QR_pago) {
+                empresa.QR_pago = `data:image/png;base64,${empresa.QR_pago.toString('base64')}`;
+            }
+            return empresa;
+        });
+
+        res.json(empresas);
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 };
 
-// Recuperar productos del carrito
-exports.obtenerCarritoPorId = async (req, res) => {
-    const { id_usuario } = req.params;
-
-    // Validar entradas
-    if (!Number.isInteger(Number(id_usuario))) {
-        return res.status(400).send({ message: 'El ID de usuario debe ser un número entero.' });
-    }
+// Obtener empresa
+exports.obtenerEmpresaPorId = async (req, res) => {
+    const empresaId = req.params.id_empresa;
 
     try {
-        const [rows] = await db.query(
-            `SELECT c.id_producto, c.cantidad, p.nombre, p.precio, p.imagen_url, p.id_empresa, p.descuento 
-            FROM carritos c 
-            JOIN productos p ON c.id_producto = p.id_producto
-            WHERE c.id_negocio = ? AND c.estado = "activo"`,
-            [id_usuario]
-        );
-        res.status(200).send(rows);
-    } catch (error) {
-        console.error(error); // Log del error para el desarrollador
-        res.status(500).send({ message: 'Error al recuperar el carrito.' });
-    }
-};
+        const [results] = await db.query('SELECT * FROM empresas WHERE id_empresa = ?', [empresaId]);
 
-// Vaciar carrito
-exports.vaciarCarrito = async (req, res) => {
-    const { id_usuario } = req.body;
-
-    // Validar entradas
-    if (!Number.isInteger(Number(id_usuario))) {
-        return res.status(400).send({ message: 'El ID de usuario debe ser un número entero.' });
-    }
-
-    try {
-        await db.query(
-            'UPDATE carritos SET estado = "inactivo" WHERE id_negocio = ?',
-            [id_usuario]
-        );
-        res.status(200).send({ message: 'Carrito vaciado.' });
-    } catch (error) {
-        console.error(error); // Log del error para el desarrollador
-        res.status(500).send({ message: 'Error al vaciar el carrito.' });
-    }
-};
-
-// Actualizar cantidad de un producto en el carrito
-exports.actualizarCantidadProducto = async (req, res) => {
-    const { id_usuario, id_producto, cantidad } = req.body;
-
-    // Validar entradas
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
- try {
-        let [result] = '';
-        if (cantidad <= 0) {
-            [result] = await db.query(
-                'UPDATE carritos SET estado = ? WHERE id_negocio = ? AND id_producto = ? AND estado = "activo"',
-                ["inactivo", id_usuario, id_producto]
-            );
-        } else {
-            [result] = await db.query(
-                'UPDATE carritos SET cantidad = ? WHERE id_negocio = ? AND id_producto = ? AND estado = "activo"',
-                [cantidad, id_usuario, id_producto]
-            );
+        if (results.length === 0) {
+            return res.status(404).send('Empresa no encontrada.');
         }
+
+        const empresa = results[0];
+
+        if (empresa.logo) {
+            empresa.logo = `data:image/png;base64,${empresa.logo.toString('base64')}`;
+        }
+        if (empresa.QR_pago) {
+            empresa.QR_pago = `data:image/png;base64,${empresa.QR_pago.toString('base64')}`;
+        }
+
+        res.json(empresa);
+    } catch (err) {
+        return res.status(500).send('Error al consultar la empresa.');
+    }
+};
+
+
+exports.actualizarEmpresa = async (req, res) => {
+    const empresaId = req.params.id_empresa;
+    const { nombre, descripcion, correo, contrasenia, latitud, longitud, contacto } = req.body;
+    const logo = req.files['logo'] ? req.files['logo'][0].buffer : null;
+    const QR_pago = req.files['QR_pago'] ? req.files['QR_pago'][0].buffer : null;
+
+    try {
+        const [empresaExistente] = await db.query('SELECT * FROM empresas WHERE id_empresa = ?', [empresaId]);
+
+        if (empresaExistente.length === 0) {
+            return res.status(404).json({ mensaje: 'Empresa no encontrada' });
+        }
+
+        let updateFields = [];
+        let updateValues = [];
+
+        if (nombre) updateFields.push('nombre = ?'), updateValues.push(nombre);
+
+        if (descripcion) updateFields.push('descripcion = ?'), updateValues.push(descripcion);
+
+        if (correo) updateFields.push('correo = ?'), updateValues.push(correo);
+
+        if (contrasenia) {
+            const hashedPassword = await bcrypt.hash(contrasenia, 10);
+            updateFields.push('contrasenia = ?'), updateValues.push(hashedPassword);
+        }
+
+        if (latitud) updateFields.push('latitud = ?'), updateValues.push(latitud);
+
+        if (longitud) updateFields.push('longitud = ?'), updateValues.push(longitud);
+
+        if (contacto) updateFields.push('contacto = ?'), updateValues.push(contacto);
+
+        if (logo) updateFields.push('logo = ?'), updateValues.push(logo);
+
+        if (QR_pago) updateFields.push('QR_pago = ?'), updateValues.push(QR_pago);
+        
+
+        if (updateFields.length === 0) {
+            return res.status(400).json({ mensaje: 'No se proporcionaron campos para actualizar' });
+        }
+
+        const query = `UPDATE empresas SET ${updateFields.join(', ')} WHERE id_empresa = ?`;
+        updateValues.push(empresaId);
+
+        const [result] = await db.query(query, updateValues);
 
         if (result.affectedRows === 0) {
-            return res.status(404).send({ message: 'Producto no encontrado en el carrito.' });
+            return res.status(404).json({ mensaje: 'No se pudo actualizar la empresa' });
         }
 
-        res.status(200).send({ message: 'Cantidad actualizada.' });
-    } catch (error) {
-        console.error(error); // Log del error para el desarrollador
-        res.status(500).send({ message: 'Error al actualizar la cantidad del producto.' });
+        res.json({ mensaje: 'Empresa actualizada exitosamente', empresaId });
+    } catch (err) {
+        console.error('Error al actualizar la empresa:', err);
+        res.status(500).json({ mensaje: 'Error al actualizar la empresa', error: err.message });
+    }
+};
+
+
+// Eliminar una empresa
+exports.eliminarEmpresa = async (req, res) => {
+    const empresaId = req.params.id;
+
+    const query = 'DELETE FROM empresas WHERE id_empresa = ? AND id = ?';
+
+    try {
+        const [result] = await db.query(query, [req.usuarioId, empresaId]);
+        res.json({ mensaje: 'Empresa eliminada con éxito' });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 };
