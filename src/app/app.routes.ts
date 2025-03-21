@@ -16,6 +16,7 @@ import { MisionVisionComponent } from './paginas/mision-vision/mision-vision.com
 import { DetalleNegocioComponent } from './paginas/detalle-negocio/detalle-negocio.component';
 import { InvoiceComponent } from './paginas/invoice/invoice.component';
 import { PedidosNegocioComponent } from './paginas/pedidos-negocio/pedidos-negocio.component';
+import { VerificarOTPComponent } from './paginas/verificar-otp/verificar-otp.component';
 
 
 export const routes: Routes = [
@@ -26,6 +27,7 @@ export const routes: Routes = [
     { path: 'empresas', component: ListaEmpresasComponent },
     { path: 'registrarse', component: RegistrarseComponent },
     { path: 'iniciar-sesion', component: IniciarSesionComponent },
+    { path: 'verificar-otp', component: VerificarOTPComponent },
     { path: 'terminos-condiciones', component: TerminosCondicionesComponent },
     { path: 'mision-vision', component: MisionVisionComponent },
     { path: 'detalles-empresa/:id', component: DetallesEmpresaComponent},

@@ -1,0 +1,38 @@
+<!-- verificar-otp.component.html -->
+<div class="otp-container">
+    <form (ngSubmit)="onSubmit()" novalidate>
+      <h1>Verificación de Seguridad</h1>
+      
+      <div class="info-box">
+        <p>Hemos enviado un código de verificación a tu correo electrónico:</p>
+        <p class="email-display">{{ email }}</p>
+        <p class="timer-text">El código expira en: <strong>{{ formatTime() }}</strong></p>
+      </div>
+      
+      <mat-form-field appearance="fill" class="otp-input">
+        <mat-label>Código de verificación</mat-label>
+        <input matInput [formControl]="otpCode" placeholder="123456" maxlength="6" autocomplete="off">
+        <mat-hint>Ingresa el código de 6 dígitos recibido por correo</mat-hint>
+        <mat-error *ngIf="otpCode.invalid && otpCode.errors?.['required']">
+          El código es requerido
+        </mat-error>
+        <mat-error *ngIf="otpCode.invalid && otpCode.errors?.['pattern']">
+          El código debe tener 6 dígitos numéricos
+        </mat-error>
+      </mat-form-field>
+      
+      <div class="actions">
+        <button type="submit" mat-raised-button color="primary" [disabled]="otpCode.invalid">
+          Verificar
+        </button>
+        
+        <button type="button" mat-stroked-button (click)="resendOTP()" class="resend-button">
+          Reenviar código
+        </button>
+      </div>
+      
+      <div class="cancel-link">
+        <a (click)="cancelar()" class="cancel-button">Cancelar y volver al inicio de sesión</a>
+      </div>
+    </form>
+  </div>

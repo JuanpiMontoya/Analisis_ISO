@@ -52,10 +52,36 @@ export class IniciarSesionComponent {
   
     try {
       const response = await this.authService.iniciarSesion(this.email.value!, this.password.value!, this.userType.value!);
-      console.log('Respuesta del server: ', response);
-      alert('Inicio de sesión exitoso');
-      this.router.navigate(['/inicio']);
-      this.failedAttempts = 0; 
+      console.log('Respuesta detallada del servidor:', JSON.stringify(response));
+      
+      // Modificación: simular flujo OTP aunque el backend no lo implemente aún
+      if (response.token) {
+        // Almacenar el token temporalmente (puedes usar localStorage para esto)
+        localStorage.setItem('temp_token', response.token);
+        
+        // Almacenar temporalmente los datos necesarios para la verificación OTP
+        this.authService.almacenarUsuarioTemporal(this.email.value!, this.userType.value!);
+        
+        // Solicitar el OTP manualmente
+        try {
+          await this.authService.solicitarOTP(this.email.value!);
+          
+          // Redirigir a la página de verificación OTP
+          this.router.navigate(['/verificar-otp']);
+        } catch (otpError) {
+          console.error('Error al solicitar OTP:', otpError);
+          alert('Error al enviar código de verificación. Iniciando sesión directamente.');
+          
+          // Como falló el OTP, usar el token recibido directamente
+          this.authService.completarLoginConToken(response.token, response.userId, response.userType);
+          this.router.navigate(['/inicio']);
+        }
+      } else {
+        // El caso original donde no hay token
+        alert('Inicio de sesión exitoso');
+        this.router.navigate(['/inicio']);
+        this.failedAttempts = 0;
+      }
     } catch (error) {
       console.error('Error al iniciar sesión', error);
       this.failedAttempts++;
