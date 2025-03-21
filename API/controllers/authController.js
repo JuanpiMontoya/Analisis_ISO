@@ -4,7 +4,7 @@ const db = require('../db');
 const { Resend } = require('resend'); 
 
 const resend = new Resend(process.env.RESEND_API_KEY); 
-
+ 
 // Lógica para iniciar sesión (modificada para OTP)
 exports.iniciarSesion = async (req, res) => {
     const { email, password, userType } = req.body;
