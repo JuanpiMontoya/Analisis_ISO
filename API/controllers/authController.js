@@ -6,12 +6,15 @@ const nodemailer = require('nodemailer');
 // Configurar transporte de Nodemailer con Gmail
 // (Recomendable crear una cuenta específica para esto)
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,        // Tu correo Gmail
-    pass: process.env.EMAIL_PASSWORD     // La contraseña de aplicación (no tu contraseña normal)
-  }
-});
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    },
+    tls: {
+      rejectUnauthorized: false // Only use in development
+    }
+  });
  
 // Lógica para iniciar sesión (modificada para OTP)
 exports.iniciarSesion = async (req, res) => {
@@ -225,7 +228,7 @@ exports.verificarOTP = async (req, res) => {
         // Generar token JWT para autenticación completa
         const token = jwt.sign(
             { id: otpData.user_id }, 
-            'secreto', 
+            process.env.JWT_SECRET || 'secreto_temporal', // El valor por defecto es una medida de seguridad
             { expiresIn: '1h' }
         );
         

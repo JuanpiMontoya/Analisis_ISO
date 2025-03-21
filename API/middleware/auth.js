@@ -7,7 +7,7 @@ exports.verificarToken = (req, res, next) => {
     const token = authHeader.split(' ')[1];
     if (!token) return res.status(403).json({ mensaje: 'Formato de token inválido' });
 
-    jwt.verify(token, 'secreto', (err, decoded) => {
+    jwt.verify(token, process.env.JWT_SECRET || 'secreto_temporal', (err, decoded) => {
         if (err) return res.status(401).json({ mensaje: 'Token inválido o expirado' });
         req.usuarioId = decoded.id;
         console.log("Usuario ID extraído del token: ", req.usuarioId);
