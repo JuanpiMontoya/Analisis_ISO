@@ -191,6 +191,9 @@ exports.verificarOTP = async (req, res) => {
     }
     
     try {
+        // Registrar la solicitud para depuración
+        console.log(`Verificando OTP para ${email} con código ${otpCode}`);
+        
         // Buscar OTP en la base de datos
         const [otpResult] = await db.query(
             'SELECT * FROM otp_codes WHERE email = ? ORDER BY expires_at DESC LIMIT 1', 
@@ -198,6 +201,7 @@ exports.verificarOTP = async (req, res) => {
         );
         
         if (!otpResult || otpResult.length === 0) {
+            console.log(`No se encontró código OTP para ${email}`);
             return res.status(400).json({ 
                 success: false, 
                 mensaje: 'No se encontró ningún código OTP para este correo' 
@@ -205,9 +209,11 @@ exports.verificarOTP = async (req, res) => {
         }
         
         const otpData = otpResult[0];
+        console.log('OTP encontrado:', otpData);
         
         // Verificar si el OTP ha expirado
         if (new Date() > new Date(otpData.expires_at)) {
+            console.log(`OTP expirado para ${email}`);
             return res.status(400).json({ 
                 success: false, 
                 mensaje: 'El código OTP ha expirado' 
@@ -216,6 +222,7 @@ exports.verificarOTP = async (req, res) => {
         
         // Verificar si el código coincide
         if (otpData.code !== otpCode) {
+            console.log(`Código OTP incorrecto para ${email}. Esperado: ${otpData.code}, Recibido: ${otpCode}`);
             return res.status(400).json({ 
                 success: false, 
                 mensaje: 'Código OTP incorrecto' 
@@ -224,27 +231,40 @@ exports.verificarOTP = async (req, res) => {
         
         // Eliminar OTP usado
         await db.query('DELETE FROM otp_codes WHERE email = ?', [email]);
+        console.log(`OTP eliminado para ${email}`);
         
         // Generar token JWT para autenticación completa
         const token = jwt.sign(
-            { id: otpData.user_id }, 
-            process.env.JWT_SECRET || 'secreto_temporal', // El valor por defecto es una medida de seguridad
+            { 
+                id: otpData.user_id,
+                userType: otpData.user_type,
+                email: email
+            }, 
+            process.env.JWT_SECRET || 'secreto_temporal',
             { expiresIn: '1h' }
         );
         
-        // Devolver información de sesión
-        res.json({
+        console.log(`Token generado para ${email} con usuario ID ${otpData.user_id}`);
+        
+        // Devolver información de sesión COMPLETA
+        const respuesta = {
             success: true,
             token,
             userId: otpData.user_id,
-            userType: otpData.user_type
-        });
+            userType: otpData.user_type,
+            mensaje: 'Autenticación exitosa'
+        };
+        
+        console.log('Respuesta a enviar:', {...respuesta, token: 'TOKEN_OCULTADO'});
+        
+        res.json(respuesta);
         
     } catch (error) {
         console.error('Error al verificar OTP:', error);
         res.status(500).json({ 
             success: false, 
-            mensaje: 'Error al verificar código OTP' 
+            mensaje: 'Error al verificar código OTP',
+            error: error.message
         });
     }
 };
