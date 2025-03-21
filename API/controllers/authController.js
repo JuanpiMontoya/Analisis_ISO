@@ -1,16 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../db');  // Conexión a la base de datos
-const nodemailer = require('nodemailer'); // Necesitarás instalar esta dependencia: npm install nodemailer
+const db = require('../db');  
+const { Resend } = require('resend'); 
 
-// Configuración del transporte de correo
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER, 
-    pass: process.env.EMAIL_PASS
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY); 
 
 // Lógica para iniciar sesión (modificada para OTP)
 exports.iniciarSesion = async (req, res) => {
@@ -58,7 +51,6 @@ exports.iniciarSesion = async (req, res) => {
     }
 };
 
-// Función para generar y enviar OTP
 async function generateAndSendOTP(email, userType, userId) {
     try {
         // Generar código OTP (6 dígitos)
@@ -68,43 +60,65 @@ async function generateAndSendOTP(email, userType, userId) {
         const expiresAt = new Date();
         expiresAt.setMinutes(expiresAt.getMinutes() + 5);
         
+        console.log('Intentando eliminar OTPs antiguos para:', email);
         // Guardar en la base de datos
         // Primero verificar si ya existe un OTP para este usuario y eliminarlo
         await db.query('DELETE FROM otp_codes WHERE email = ?', [email]);
         
+        console.log('Insertando nuevo OTP para:', email);
         // Insertar nuevo OTP
         await db.query(
             'INSERT INTO otp_codes (email, code, user_type, user_id, expires_at) VALUES (?, ?, ?, ?, ?)',
             [email, otpCode, userType, userId, expiresAt]
         );
         
-        // Enviar correo electrónico
-        await transporter.sendMail({
-            from: '"Tu Aplicación" <noreply@tuapp.com>',
-            to: email,
-            subject: 'Código de Verificación para Iniciar Sesión',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2>Código de Verificación</h2>
-                    <p>Hola,</p>
-                    <p>Has solicitado iniciar sesión en tu cuenta. Tu código de verificación es:</p>
-                    <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 24px; letter-spacing: 5px; margin: 20px 0;">
-                        <strong>${otpCode}</strong>
-                    </div>
-                    <p>Este código expirará en 5 minutos. Si no has solicitado este código, por favor ignora este correo.</p>
-                    <p>Saludos,<br>El equipo de Merka</p>
-                </div>
-            `
-        });
+        console.log('Verificando API key para Resend:', 
+            process.env.RESEND_API_KEY ? 'API Key disponible' : 'API Key no encontrada');
         
-        return true;
+        if (!process.env.RESEND_API_KEY) {
+            console.error('API Key de Resend no configurada');
+            throw new Error('API Key de Resend no configurada');
+        }
+        
+        console.log('Enviando correo a:', email);
+        // Enviar correo con Resend
+        try {
+            const { data, error } = await resend.emails.send({
+                from: 'Merka <onboarding@resend.dev>', // Dirección por defecto de Resend
+                to: email,
+                subject: 'Código de Verificación para Iniciar Sesión',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <h2>Código de Verificación</h2>
+                        <p>Hola,</p>
+                        <p>Has solicitado iniciar sesión en tu cuenta. Tu código de verificación es:</p>
+                        <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 24px; letter-spacing: 5px; margin: 20px 0;">
+                            <strong>${otpCode}</strong>
+                        </div>
+                        <p>Este código expirará en 5 minutos. Si no has solicitado este código, por favor ignora este correo.</p>
+                        <p>Saludos,<br>El equipo de Merka</p>
+                    </div>
+                `
+            });
+            
+            if (error) {
+                console.error('Error al enviar correo con Resend:', error);
+                throw new Error(`Error al enviar correo: ${error.message}`);
+            }
+            
+            console.log('Correo enviado exitosamente:', data);
+            return true;
+        } catch (sendError) {
+            console.error('Error al enviar email con Resend:', sendError);
+            throw new Error(`Error al enviar email: ${sendError.message || 'Error desconocido'}`);
+        }
     } catch (error) {
-        console.error('Error al generar/enviar OTP:', error);
-        return false;
+        console.error('Error detallado al generar/enviar OTP:', error);
+        throw error; 
     }
 }
 
-// Nuevo método para solicitar OTP
+
 exports.solicitarOTP = async (req, res) => {
     const { email } = req.body;
     
@@ -136,22 +150,32 @@ exports.solicitarOTP = async (req, res) => {
         }
         
         // Generar y enviar nuevo OTP
-        const success = await generateAndSendOTP(email, userType, userId);
-        
-        if (success) {
-            res.json({ 
-                success: true, 
-                mensaje: 'Código OTP enviado correctamente' 
+        try {
+            const success = await generateAndSendOTP(email, userType, userId);
+            
+            if (success) {
+                res.json({ 
+                    success: true, 
+                    mensaje: 'Código OTP enviado correctamente' 
+                });
+            } else {
+                throw new Error('Error al enviar código OTP');
+            }
+        } catch (otpError) {
+            console.error('Error específico en generateAndSendOTP:', otpError);
+            res.status(500).json({ 
+                success: false, 
+                mensaje: 'Error al enviar correo con OTP',
+                error: otpError.message 
             });
-        } else {
-            throw new Error('Error al enviar código OTP');
         }
         
     } catch (error) {
         console.error('Error al solicitar OTP:', error);
         res.status(500).json({ 
             success: false, 
-            mensaje: 'Error al generar código de verificación' 
+            mensaje: 'Error al generar código de verificación',
+            error: error.message
         });
     }
 };

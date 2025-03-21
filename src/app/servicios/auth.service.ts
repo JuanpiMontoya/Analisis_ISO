@@ -53,15 +53,17 @@ export class AutenticacionService {
   }
 
   // Método para solicitar el envío de OTP
-  async solicitarOTP(email: string): Promise<AuthResponse> {
-    try {
-      return await firstValueFrom(
-        this.http.post<AuthResponse>(`${this.apiUrl}/auth/solicitar-otp`, { email })
-      );
-    } catch (error) {
-      console.error('Error al solicitar OTP:', error);
-      throw error;
-    }
+  solicitarOTP(email: string): Promise<any> {
+    return this.http.post<any>(`${this.apiUrl}/auth/solicitar-otp`, { email })
+      .toPromise()
+      .then(response => {
+        console.log('Respuesta exitosa al solicitar OTP:', response);
+        return response;
+      })
+      .catch(error => {
+        console.error('Error detallado al solicitar OTP:', error);
+        throw error;
+      });
   }
 
   // Método para verificar OTP
