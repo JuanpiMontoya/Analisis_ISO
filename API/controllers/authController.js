@@ -1,9 +1,17 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');  
-const { Resend } = require('resend'); 
+const nodemailer = require('nodemailer');
 
-const resend = new Resend(process.env.RESEND_API_KEY); 
+// Configurar transporte de Nodemailer con Gmail
+// (Recomendable crear una cuenta específica para esto)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,        // Tu correo Gmail
+    pass: process.env.EMAIL_PASSWORD     // La contraseña de aplicación (no tu contraseña normal)
+  }
+});
  
 // Lógica para iniciar sesión (modificada para OTP)
 exports.iniciarSesion = async (req, res) => {
@@ -72,19 +80,11 @@ async function generateAndSendOTP(email, userType, userId) {
             [email, otpCode, userType, userId, expiresAt]
         );
         
-        console.log('Verificando API key para Resend:', 
-            process.env.RESEND_API_KEY ? 'API Key disponible' : 'API Key no encontrada');
-        
-        if (!process.env.RESEND_API_KEY) {
-            console.error('API Key de Resend no configurada');
-            throw new Error('API Key de Resend no configurada');
-        }
-        
         console.log('Enviando correo a:', email);
-        // Enviar correo con Resend
+        // Enviar correo con Nodemailer
         try {
-            const { data, error } = await resend.emails.send({
-                from: 'Merka <onboarding@resend.dev>', // Dirección por defecto de Resend
+            const mailOptions = {
+                from: '"Merka" <' + process.env.EMAIL_USER + '>',
                 to: email,
                 subject: 'Código de Verificación para Iniciar Sesión',
                 html: `
@@ -99,17 +99,13 @@ async function generateAndSendOTP(email, userType, userId) {
                         <p>Saludos,<br>El equipo de Merka</p>
                     </div>
                 `
-            });
+            };
             
-            if (error) {
-                console.error('Error al enviar correo con Resend:', error);
-                throw new Error(`Error al enviar correo: ${error.message}`);
-            }
-            
-            console.log('Correo enviado exitosamente:', data);
+            const info = await transporter.sendMail(mailOptions);
+            console.log('Correo enviado exitosamente:', info.messageId);
             return true;
         } catch (sendError) {
-            console.error('Error al enviar email con Resend:', sendError);
+            console.error('Error al enviar email con Nodemailer:', sendError);
             throw new Error(`Error al enviar email: ${sendError.message || 'Error desconocido'}`);
         }
     } catch (error) {
